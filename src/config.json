@@ -1,0 +1,13 @@
+{
+	"discord_token": "",
+	"prefix": "!",
+	"owners": [""],
+	"r2": {
+		"endpoint": "",
+		"accessKey": "",
+		"secret": "",
+		"customDomain": "",
+		"bucketName": ""
+	},
+	"loading_emoji": ""
+}

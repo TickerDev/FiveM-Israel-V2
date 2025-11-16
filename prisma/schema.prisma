@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Users {
+  id                String      @id @unique
+  profession        Professions @default(NO_PROFESSION)
+  feedbacksGiven    Int         @default(0)
+  feedbacksReceived Int         @default(0)
+  FeedbacksGiven    Feedbacks[] @relation("FeedbacksGiven")
+  FeedbacksReceived Feedbacks[] @relation("FeedbacksReceived")
+  FeedbacksReviewed Feedbacks[] @relation("FeedbacksReviewed")
+  serverBlacklisted Boolean     @default(false)
+  serverBlacklistedReason String? @db.Text
+  serverBlacklistedAt DateTime?
+  @@index([profession])
+  @@index([serverBlacklisted])
+}
+
+model Feedbacks {
+  id               String         @id @unique @default(uuid())
+  feedbacker       Users          @relation("FeedbacksGiven", fields: [feedbackerID], references: [id], onDelete: Cascade)
+  feedbackerID     String         @db.Text
+  feedbackedUser   Users          @relation("FeedbacksReceived", fields: [feedbackedUserID], references: [id], onDelete: Cascade)
+  feedbackedUserID String         @db.Text
+  status           FeedbackStatus @default(PENDING)
+  evidence         String[]       @default([])
+  cdnEvidence      String[]       @default([])
+  additionalInfo   String?
+  reviewers        String[]       @default([])
+  feedbackType     FeedbackType   @default(POSITIVE)
+  reviewedBy       Users?         @relation("FeedbacksReviewed", fields: [reviewedByID], references: [id], onDelete: SetNull)
+  reviewedByID     String?        @db.Text
+  createdAt        DateTime       @default(now())
+
+  @@index([feedbackerID])
+  @@index([feedbackedUserID])
+  @@index([createdAt])
+  @@index([feedbackerID, createdAt])
+  @@index([feedbackedUserID, createdAt])
+}
+
+model Servers {
+  guildID     String   @db.Text
+  channelID   String   @id
+  ownerID     String   @db.Text
+  moderatorID String   @db.Text
+  category    String   @db.Text
+  votes       Int      @default(0)
+  name        String   @db.Text
+  description String   @db.Text
+  image       String   @db.Text
+  invite      String   @db.Text
+  messageId   String   @db.Text
+  webhook     String?  @db.Text
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([guildID])
+  @@index([ownerID])
+  @@index([category])
+  @@index([votes])
+  @@index([verified])
+  @@index([category, votes])
+  @@index([createdAt])
+}
+
+model Logs {
+  id        Int      @id @default(autoincrement())
+  action    String
+  details   String
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([createdAt])
+  @@index([action, createdAt])
+}
+
+model BlacklistRequests {
+  id                String   @id @unique @default(cuid())
+  userId            String   @db.Text
+  reason            String[]
+  blacklistedUserId String   @db.Text
+  createdAt         DateTime @default(now())
+  evidence          String
+  cdnEvidence       String[] @default([])
+  additionalInfo    String?
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// model ServerCreate {
+//   id          Int    @id @unique
+//   guildID     String @db.Text
+//   ownerID     String @db.Text
+//   category    String @db.Text
+//   votes       Int    @default(0)
+//   name        String @db.Text
+//   description String @db.Text
+//   image       String @db.Text
+//   invite      String @db.Text
+//   messageId   String @db.Text
+
+//   @@index([guildID])
+//   @@index([ownerID])
+//   @@index([category])
+//   @@index([votes])
+// }
+
+model Seasons {
+  season      Int      @id @default(autoincrement())
+  startedAt   DateTime @default(now())
+  firstPlace  Json
+  secondPlace Json
+  thirdPlace  Json
+}
+
+model FrozenServers {
+  id        Int      @id @default(autoincrement())
+  channelID String
+  reason    String
+  frozenAt  DateTime @default(now())
+
+  @@index([channelID])
+  @@index([frozenAt])
+}
+
+enum Professions {
+  NO_PROFESSION
+  DEVELOPER
+  DESIGNER
+  MODELER
+}
+
+enum FeedbackType {
+  POSITIVE
+  NEGATIVE
+}
+
+enum FeedbackStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+}
